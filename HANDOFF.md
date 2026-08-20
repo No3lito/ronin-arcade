@@ -74,12 +74,35 @@ Hard-won rules:
 - For scale/position problems, don't re-roll: crop → scale → overlay deterministically
   (ffmpeg), it is exact and free.
 
-## Deploying
+## This repo is self-contained — you do not depend on the original author
 
-The live site deploys to Netlify (site name `ronin-arcade`). Any method works —
-drag-and-drop the repo folder in the Netlify UI, `netlify deploy --prod --dir .`, or
-connect this repo in the Netlify dashboard for auto-deploys on push. There is no
-build command; publish directory is the repo root.
+Everything needed to run, host, and extend the project is in here:
+
+- **No accounts required.** All art and animation files are committed locally. There
+  are no API keys, no private buckets, and nothing to request access to.
+- **No build tooling.** No npm install, no bundler, no framework version to match.
+- **MIT licensed** (see `LICENSE`) — use it, modify it, ship it.
+- `shared/cdn.js` and each game's `js/cdn.js` map asset filenames to backup URLs on a
+  third-party CDN. These are *insurance only* — every mapped file also exists locally
+  and loads first. If those URLs ever die, nothing breaks. You may delete the maps.
+
+## Deploying (pick one — all independent of the original author)
+
+**GitHub Pages (zero setup, recommended).** This repo ships
+`.github/workflows/deploy.yml`. In your fork: Settings → Pages → Source →
+"GitHub Actions". Every push to `main` then publishes automatically to
+`https://<your-username>.github.io/<repo-name>/`.
+
+**Netlify / Vercel / Cloudflare Pages.** Connect the repo in their dashboard. Leave
+the build command **empty** and set the publish directory to **`.`** (the repo root).
+Or drag the folder onto app.netlify.com/drop for an instant deploy with no account
+linkage.
+
+**Any web host.** Upload the files. It's plain HTML/JS — it works over `file://`
+limitations aside, any static host serves it as-is.
+
+The original live site (https://ronin-arcade.netlify.app) is on the author's Netlify
+account. You do not need it; deploy your own copy with any option above.
 
 ## Game notes for whoever continues
 
