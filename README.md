@@ -2,7 +2,12 @@
 
 One website. Four games. One comic. One clan.
 
-A fully static arcade built around the RONIN shadow-samurai — no build step, no server, no dependencies. Open `index.html` or host the folder anywhere (Netlify, GitHub Pages, any static host) and it runs.
+A fully static arcade built around the RONIN shadow-samurai — no build step, no server, no dependencies. Host the folder anywhere (GitHub Pages, Netlify, any static host) and it runs.
+
+### 👉 New to this? Read [START-HERE.md](START-HERE.md) first
+It walks you from zero to a live site you control, with no experience assumed. Experienced devs: [HANDOFF.md](HANDOFF.md) has the architecture.
+
+**Heads up:** don't just double-click `index.html` — the games load code as ES modules, which browsers block over `file://`. Serve the folder instead (`npx serve .`, VS Code's Live Server, or GitHub Pages). START-HERE explains all three.
 
 ## What's inside
 

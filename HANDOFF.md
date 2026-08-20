@@ -2,11 +2,17 @@
 
 Everything you need to run, modify, and extend this project. Last updated 2026-08-20.
 
+> **Newer to web development?** Read [START-HERE.md](START-HERE.md) instead — it covers
+> the same project assuming no prior experience, and gets you to a live site you own.
+> Come back here when you want the architecture.
+
 ## The short version
 
 - **Live site**: https://ronin-arcade.netlify.app
 - **This repo is the entire site.** Pure static files — no build step, no framework, no server, no package.json. `index.html` at the root is the hub; every game is a folder. Host it anywhere that serves static files.
 - Run locally: `npx serve .` (or any static server). Open the served URL.
+- **Note:** the games use ES modules, so `file://` won't work — it must be served over
+  http, even locally. Any static server does it.
 
 ## Structure
 
