@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>BLADE DASH — RONIN ARCADE</title>
+<meta name="theme-color" content="#070405">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%23a01818'/%3E%3C/svg%3E">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; background:#070405; overflow:hidden; touch-action:none; }
+  body { font-family:"Yu Mincho","Hiragino Mincho ProN",Georgia,serif; }
+  #wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  #game { width:min(100vw, calc(100vh * 16 / 9)); aspect-ratio:16/9; display:block; }
+  #backArcade {
+    position:fixed; top:10px; left:10px; z-index:40; color:#c9a;
+    background:rgba(7,4,5,.72); border:1px solid rgba(200,40,40,.45);
+    padding:5px 12px; border-radius:4px; font:600 12px/1.4 serif;
+    letter-spacing:.12em; text-decoration:none; opacity:.75;
+  }
+  #guideBtn {
+    position:fixed; top:10px; left:118px; z-index:40; color:#e8b48a;
+    background:rgba(7,4,5,.72); border:1px solid rgba(200,40,40,.45);
+    padding:5px 12px; border-radius:4px; font:600 12px/1.4 serif;
+    letter-spacing:.12em; text-decoration:none; opacity:.85;
+  }
+  #touchUI { position:fixed; inset:0; z-index:30; display:none; pointer-events:none; }
+  body.touch #touchUI { display:block; }
+  .tbtn {
+    position:absolute; pointer-events:auto; border-radius:50%;
+    border:1px solid rgba(200,60,60,.55); background:rgba(20,8,8,.42); color:#e8d9c8;
+    display:flex; align-items:center; justify-content:center; font:700 13px serif;
+    letter-spacing:.08em; user-select:none; -webkit-user-select:none;
+  }
+  .tbtn:active { background:rgba(160,24,24,.5); }
+  #tJump { right:4%; bottom:12%; width:92px; height:92px; }
+  #tDash { left:4%; bottom:12%; width:92px; height:92px; border-color:rgba(255,90,40,.8); }
+</style>
+</head>
+<body>
+<a id="backArcade" href="../">&#10554; ARCADE</a>
+<a id="guideBtn" href="#">? GUIDE</a>
+<div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
+<div id="touchUI">
+  <div class="tbtn" id="tJump">JUMP</div>
+  <div class="tbtn" id="tDash">DASH</div>
+</div>
+<script type="module" src="js/game.js"></script>
+</body>
+</html>
