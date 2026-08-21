@@ -13,7 +13,7 @@ It walks you from zero to a live site you control, with no experience assumed. E
 
 | Door | Path | What it is |
 |---|---|---|
-| THE DUEL | `duel/` | Street-Fighter-style best-of-3 duel vs THE RIVAL — 4 slash arts, guard, spirit meter, IAI CIRCLE super |
+| THE SWARM | `swarm/` | Horde survivor — auto-swinging blade, 10 stacking timed powers, a WARLORD boss every 600 kills |
 | BLADE DASH | `run/` | Endless forest run-dash — jump, double-jump, dash through sealed barriers, distance score |
 | THE SHIFTING VALLEY | `adventure/` | Zelda-style flip-screen quest across 15 lands whose paths reshuffle every 30 seconds |
 | THE FORGE | `forge/` | Layered character builder — body, garb, armor, weapons, hair, masks, headwear, full color dyes, SNAP to PNG |

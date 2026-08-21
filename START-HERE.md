@@ -113,7 +113,7 @@ Nothing here is hidden or generated — every file is editable text.
 | The main menu / title / doors | `index.html` |
 | The comic's words | `comic/index.html` (the text is right there in plain English) |
 | The comic's pictures | swap files in `comic/assets/` |
-| How hard the fighting game is | `duel/js/game.js` — look for `P_ATK` (damage numbers) |
+| How hard the horde game is | `swarm/js/game.js` — look for `BASE` (your stats) and `threat()` (difficulty) |
 | How fast the runner speeds up | `run/js/game.js` — search for `P.spd` |
 | Clothing/weapon options in the builder | `forge/js/forge.js` — the list near the top |
 | Any picture | find it in that game's `assets/` folder and replace it |

@@ -19,7 +19,7 @@ Everything you need to run, modify, and extend this project. Last updated 2026-0
 ```
 index.html        the hub — blood-moon menu, banner doors, the scroll
 assets/           hub art (hub.png), title lettering, the comic scroll icon
-duel/             THE DUEL — 1v1 fighter (best-of-3 vs THE RIVAL)
+swarm/            THE SWARM — horde survivor (timed powers, warlord boss)
 run/              BLADE DASH — endless forest runner
 adventure/        THE SHIFTING VALLEY — Zelda-style flip-screen quest
 forge/            THE FORGE — layered character builder
@@ -32,8 +32,8 @@ Every game is self-contained: one `index.html` + `js/` + `assets/`. All paths ar
 ## How the rendering works (the one thing to understand)
 
 All character art is **sprite strips**: grids of animation frames in a single webp
-(e.g. 8 columns x 6 rows = 48 frames, each cell 532x300 in the duel, 266x300 in the
-runner). Strips are stored on a chroma-green or transparent background;
+(e.g. 8 columns x 6 rows = 48 frames, each cell 532x300 for the big character
+strips, 266x300 in the runner). Strips are stored on a chroma-green or transparent background;
 `shared/sprites.js` keys the green out at load time in a canvas, so games just draw
 frame rectangles. `shared/cdn.js` maps every strip filename to a permanent fal.media
 URL — if a local file 404s, the loader falls back to the CDN copy automatically.
@@ -112,10 +112,14 @@ account. You do not need it; deploy your own copy with any option above.
 
 ## Game notes for whoever continues
 
-- **DUEL** (`duel/js/game.js`): attack data lives in `P_ATK` / `R_ATK` — frame
-  windows (`from/hitA/hitB/last`), damage, ranges. Hit windows are tuned to the
-  current strips' contact frames; if you swap animation strips, retune those numbers.
-  `assets.js` documents which strip file is which move.
+- **THE SWARM** (`swarm/js/game.js`): the main tuning knobs are `BASE` (starting
+  stats), `POWERS` (the 10 timed pickups) with `POWER_TIME` for how long each burns
+  and `POWER_EVERY` for how many kills between drops, `UPGRADES` (permanent
+  level-up choices), and `BOSS_EVERY` / the `boss` line in `spawnFoe` for the
+  warlord. `threat()` is the difficulty curve — it reads wave, level, and lifetime
+  powers taken, so the horde scales as the player does. Effective stats are derived
+  in `recalc()` from a permanent base plus whatever powers are still active; never
+  mutate `P` stats directly or they will leak when a power expires.
 - **BLADE DASH** (`run/js/game.js`): course generation in `genAhead` (difficulty
   ramps by distance), environment art in `run/assets/env-*.webp`, obstacles use
   sprite art with a pulsing red glow so they read as dangers. The hero sprite sinks
