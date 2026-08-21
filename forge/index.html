@@ -2,10 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <title>THE FORGE — RONIN ARCADE</title>
 <meta name="theme-color" content="#070405">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%23a01818'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../shared/mobile.css">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { width:100%; height:100%; background:#070405; color:#e8d9c8; overflow:hidden; }
@@ -46,11 +50,40 @@
   #loading { position:fixed; inset:0; background:#070405; z-index:60; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; }
   #loading .bar { width:300px; height:10px; background:rgba(30,15,15,.9); }
   #loading .bar i { display:block; height:100%; width:0; background:#c92222; }
-  @media (max-width: 760px) {
-    #app { flex-direction:column; }
-    #left { flex:0 0 52%; }
-    #view { height:96%; }
-    #right { padding:16px; }
+  @media (max-width: 860px), (max-height: 620px) {
+    html, body { height:100dvh; height:calc(var(--vh,1vh) * 100); overflow:hidden; }
+    #app { flex-direction:column; height:100%; }
+    /* the warrior gets the top half and stays fully visible */
+    #left {
+      flex:0 0 46%; min-height:0;
+      padding:calc(env(safe-area-inset-top) + 6px) 8px 4px;
+    }
+    #view { height:100%; width:auto; max-width:100%; border-radius:4px; }
+    /* every control lives in one scrolling tray under it */
+    #right {
+      flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+      padding:14px 14px calc(env(safe-area-inset-bottom) + 90px);
+      border-top:1px solid rgba(200,60,50,.28);
+      background:linear-gradient(180deg, rgba(16,8,10,.6), rgba(7,4,5,.95));
+      touch-action:pan-y;           /* the tray may scroll, the page may not */
+    }
+    h1 { font-size:20px; }
+    .sub { font-size:11px; margin-bottom:12px; }
+    .cat { margin-bottom:13px; }
+    .cat h2 { font-size:11px; margin-bottom:6px; }
+    /* fat-finger targets */
+    .chip { padding:10px 15px; font-size:14px; }
+    .sw { width:34px; height:34px; }
+    .opts, .swatches { gap:9px; }
+    /* actions pinned so SNAP is always reachable */
+    #actions {
+      position:fixed; left:0; right:0; bottom:0; z-index:50; margin:0;
+      padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);
+      background:linear-gradient(180deg, rgba(7,4,5,.72), rgba(7,4,5,.97));
+      border-top:1px solid rgba(200,60,50,.3); gap:10px;
+    }
+    .big-btn { padding:14px; font-size:15px; }
+    #backArcade { top:calc(env(safe-area-inset-top) + 6px); left:calc(env(safe-area-inset-left) + 6px); }
   }
 </style>
 </head>

@@ -1,6 +1,8 @@
 // THE FORGE — character builder for RONIN ARCADE.
 // Every layer is generated over the same anchor pose, so layers stack 1:1.
 import { loadImage } from '../../shared/sprites.js';
+import { initMobile } from '../../shared/mobile.js';
+const MOB = initMobile({ landscape: false });
 
 const cv = document.getElementById('view');
 const g = cv.getContext('2d');

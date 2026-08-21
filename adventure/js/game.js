@@ -2,6 +2,8 @@
 // 10 tile areas · 4 exits each · paths re-knot every 30 seconds ·
 // find THE MAW. NES-Zelda look: flat-shaded pixel tiles, flip-screen rooms.
 import { loadImage } from '../../shared/sprites.js';
+import { initMobile } from '../../shared/mobile.js';
+const MOB = initMobile({"landscape":true});
 
 const W = 960, H = 540, TS = 60, COLS = 16, ROWS = 9;
 const SHIFT_SECONDS = 30;
@@ -407,15 +409,20 @@ function fmt(t) {
   const m = Math.floor(t / 60), s = Math.floor(t % 60);
   return `${m}:${String(s).padStart(2, '0')}`;
 }
+// the corner chips are ~46 screen px tall; convert to canvas units so the
+// HUD always clears them however far the canvas is scaled on a phone
+const HUDY = MOB.touch
+  ? Math.round(46 * (cv.width / Math.max(window.innerWidth, window.innerHeight, 1)))
+  : 0;
 function drawHud() {
   for (let i = 0; i < P.maxHp / 2; i++) {
     const full = P.hp >= (i + 1) * 2, half = P.hp === i * 2 + 1;
     g.fillStyle = full || half ? '#c92222' : 'rgba(50,25,28,.85)';
-    const x = 20 + i * 26, y = 16;
+    const x = 20 + i * 26, y = 16 + HUDY;
     g.fillRect(x, y, 8, 8); g.fillRect(x + 10, y, 8, 8); g.fillRect(x + 2, y + 6, 14, 8); g.fillRect(x + 6, y + 12, 6, 4);
     if (half) { g.fillStyle = 'rgba(50,25,28,.85)'; g.fillRect(x + 9, y, 9, 18); }
   }
-  brush(AREAS[G_.area].name, W / 2, 22, 17, '#e8d9c8');
+  brush(AREAS[G_.area].name, W / 2, 22 + HUDY, 17, '#e8d9c8');
   brush(fmt(G_.timer) + ' · ' + G_.visited.size + '/10 seen', W - 22, 22, 13, '#9a8a7a', 'right');
   const st = Math.ceil(G_.shiftT);
   const urgent = st <= 5;

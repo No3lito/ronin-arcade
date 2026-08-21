@@ -3,9 +3,13 @@
 // 16-frame dash strips generated from his master image. A procedurally
 // animated skeleton stands in until the strips finish loading.
 import { loadStrips, drawSprite, frameOf } from '../../shared/sprites.js';
+import { initMobile, fitCanvas } from '../../shared/mobile.js';
+const MOB = initMobile({ landscape: true });
 
-const W = 960, H = 540;
 const cv = document.getElementById('game');
+// widen to the phone's aspect so nothing is wasted on black bars
+fitCanvas(cv, { designH: 540, minW: 960, maxW: 1400 });
+const W = cv.width, H = cv.height;
 const g = cv.getContext('2d');
 
 /* ------------------------------ audio ------------------------------ */
@@ -619,18 +623,23 @@ function drawFxAll(dt) {
   g.globalAlpha = 1;
   fx = fx.filter((s) => s.t < s.life);
 }
+// the corner chips are ~46 screen px tall; convert to canvas units so the
+// HUD always clears them however far the canvas is scaled on a phone
+const HUDY = MOB.touch
+  ? Math.round(46 * (cv.width / Math.max(window.innerWidth, window.innerHeight, 1)))
+  : 0;
 function drawHud() {
-  brush(Math.floor(G.dist) + 'm', W / 2, 34, 34, '#e8d9c8');
-  brush('BEST ' + G.best + 'm', W - 24, 26, 14, '#9a8a7a', 'right');
+  brush(Math.floor(G.dist) + 'm', W / 2, 34 + HUDY, 34, '#e8d9c8');
+  brush('BEST ' + G.best + 'm', W - 24, 26 + HUDY, 14, '#9a8a7a', 'right');
   // dash cooldown pip
   const ready = P.dashCd <= 0;
   g.fillStyle = ready ? '#ff5a3a' : 'rgba(90,40,36,.8)';
-  g.beginPath(); g.arc(34, 30, 11, 0, 7); g.fill();
+  g.beginPath(); g.arc(34, 30 + HUDY, 11, 0, 7); g.fill();
   if (!ready) {
     g.fillStyle = '#1a0e0c';
-    g.beginPath(); g.moveTo(34, 30); g.arc(34, 30, 11, -Math.PI / 2, -Math.PI / 2 + (P.dashCd / 1.1) * Math.PI * 2); g.fill();
+    g.beginPath(); g.moveTo(34, 30 + HUDY); g.arc(34, 30 + HUDY, 11, -Math.PI / 2, -Math.PI / 2 + (P.dashCd / 1.1) * Math.PI * 2); g.fill();
   }
-  brush('DASH', 54, 30, 12, ready ? '#ff8a5a' : '#6a5a56', 'left');
+  brush('DASH', 54, 30 + HUDY, 12, ready ? '#ff8a5a' : '#6a5a56', 'left');
   if (P.spd > 640) {
     g.strokeStyle = `rgba(232,217,200,${Math.min(0.3, (P.spd - 640) / 700)})`; g.lineWidth = 2;
     for (let i = 0; i < 7; i++) {

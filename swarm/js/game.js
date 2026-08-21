@@ -2,8 +2,13 @@
 // A wide burning field, a blade that swings itself, and a horde that grows
 // exactly as fast as you do.
 import { loadStrips, drawSprite, frameOf } from '../../shared/sprites.js';
+import { initMobile, bindStick, fitCanvas } from '../../shared/mobile.js';
+
+const MOB = initMobile({ landscape: true });
 
 const cv = document.getElementById('cv');
+// on a phone, widen the view to the screen's aspect rather than letterbox it
+fitCanvas(cv, { designH: 600, minW: 960, maxW: 1500 });
 const g = cv.getContext('2d');
 const W = cv.width, H = cv.height;
 const WORLD = { w: 2800, h: 1900 };
@@ -22,25 +27,19 @@ addEventListener('keydown', (e) => {
   }
 });
 addEventListener('keyup', (e) => { key[e.code] = false; });
-const stick = { active: false, ox: 0, oy: 0, dx: 0, dy: 0 };
-function touchPt(t) {
-  const r = cv.getBoundingClientRect();
-  return { x: (t.clientX - r.left) * (W / r.width), y: (t.clientY - r.top) * (H / r.height) };
-}
+// visible thumb stick, bound from the shared layer
+const stickEl = document.getElementById('stick');
+const stick = stickEl ? bindStick(stickEl, document.getElementById('knob'))
+                      : { x: 0, y: 0, active: false };
+
+// taps on the canvas start a run and pick level-up cards
 cv.addEventListener('touchstart', (e) => {
-  e.preventDefault(); const p = touchPt(e.touches[0]);
+  e.preventDefault();
+  const r = cv.getBoundingClientRect(), t = e.touches[0];
+  const x = (t.clientX - r.left) * (W / r.width);
   if (G.scene === 'title' || G.scene === 'dead') { startRun(); return; }
-  if (G.scene === 'levelup') { pickUpgrade(p.x < W / 3 ? 0 : (p.x < W * 2 / 3 ? 1 : 2)); return; }
-  stick.active = true; stick.ox = p.x; stick.oy = p.y; stick.dx = stick.dy = 0;
+  if (G.scene === 'levelup') pickUpgrade(x < W / 3 ? 0 : (x < W * 2 / 3 ? 1 : 2));
 }, { passive: false });
-cv.addEventListener('touchmove', (e) => {
-  e.preventDefault(); if (!stick.active) return;
-  const p = touchPt(e.touches[0]);
-  const dx = p.x - stick.ox, dy = p.y - stick.oy, len = Math.hypot(dx, dy) || 1;
-  const m = Math.min(1, len / 62);
-  stick.dx = (dx / len) * m; stick.dy = (dy / len) * m;
-}, { passive: false });
-cv.addEventListener('touchend', (e) => { e.preventDefault(); stick.active = false; stick.dx = stick.dy = 0; }, { passive: false });
 cv.addEventListener('mousedown', () => { if (G.scene === 'title' || G.scene === 'dead') startRun(); });
 
 /* ------------------------------- assets ---------------------------- */
@@ -418,7 +417,7 @@ function update(dt) {
   /* movement */
   let mx = (key.KeyD || key.ArrowRight ? 1 : 0) - (key.KeyA || key.ArrowLeft ? 1 : 0);
   let my = (key.KeyS || key.ArrowDown ? 1 : 0) - (key.KeyW || key.ArrowUp ? 1 : 0);
-  if (stick.active) { mx = stick.dx; my = stick.dy; }
+  if (stick.active) { mx = stick.x; my = stick.y; }
   const ml = Math.hypot(mx, my);
   if (ml > 0.02) {
     mx /= Math.max(1, ml); my /= Math.max(1, ml);
@@ -966,25 +965,30 @@ function drawPowerAuras() {
   }
 }
 
+// the chips are ~46 screen px tall; convert that into canvas units so the
+// HUD clears them no matter how much the canvas is scaled down on the phone
+const HUDY = MOB.touch
+  ? Math.round(46 * (cv.width / Math.max(window.innerWidth, window.innerHeight, 1)))
+  : 0;
 function drawHud() {
   const bw = 250;
-  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(20, 18, bw, 15);
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(20, 18 + HUDY, bw, 15);
   const hg = g.createLinearGradient(20, 0, 20 + bw, 0);
   hg.addColorStop(0, '#c92222'); hg.addColorStop(1, '#ff6a4a');
-  g.fillStyle = hg; g.fillRect(20, 18, bw * Math.max(0, P.hp / P.maxHp), 15);
-  g.strokeStyle = 'rgba(200,60,50,.5)'; g.lineWidth = 1; g.strokeRect(20, 18, bw, 15);
-  brush(`${Math.ceil(P.hp)} / ${P.maxHp}`, 26, 25, 11, '#f0e0d0', 'left');
-  g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(20, 38, bw, 6);
-  g.fillStyle = '#d9c281'; g.fillRect(20, 38, bw * Math.min(1, P.xp / P.next), 6);
-  brush('LV ' + P.lvl, 20 + bw + 10, 40, 13, '#d9c281', 'left');
+  g.fillStyle = hg; g.fillRect(20, 18 + HUDY, bw * Math.max(0, P.hp / P.maxHp), 15);
+  g.strokeStyle = 'rgba(200,60,50,.5)'; g.lineWidth = 1; g.strokeRect(20, 18 + HUDY, bw, 15);
+  brush(`${Math.ceil(P.hp)} / ${P.maxHp}`, 26, 25 + HUDY, 11, '#f0e0d0', 'left');
+  g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(20, 38 + HUDY, bw, 6);
+  g.fillStyle = '#d9c281'; g.fillRect(20, 38 + HUDY, bw * Math.min(1, P.xp / P.next), 6);
+  brush('LV ' + P.lvl, 20 + bw + 10, 40 + HUDY, 13, '#d9c281', 'left');
   const m = Math.floor(G.run / 60), s = Math.floor(G.run % 60);
-  brush(`${m}:${String(s).padStart(2, '0')}`, W / 2, 30, 30, '#e8d9c8');
-  brush('WAVE ' + G.wave, W - 24, 24, 16, '#b9a695', 'right');
-  brush(G.kills + ' SLAIN', W - 24, 46, 13, '#8a7a6a', 'right');
-  g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(W - 150, 56, 126, 4);
-  g.fillStyle = 'rgba(200,60,50,.75)'; g.fillRect(W - 150, 56, 126 * (G.waveT / WAVE_LEN), 4);
+  brush(`${m}:${String(s).padStart(2, '0')}`, W / 2, 30 + HUDY, 30, '#e8d9c8');
+  brush('WAVE ' + G.wave, W - 24, 24 + HUDY, 16, '#b9a695', 'right');
+  brush(G.kills + ' SLAIN', W - 24, 46 + HUDY, 13, '#8a7a6a', 'right');
+  g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(W - 150, 56 + HUDY, 126, 4);
+  g.fillStyle = 'rgba(200,60,50,.75)'; g.fillRect(W - 150, 56 + HUDY, 126 * (G.waveT / WAVE_LEN), 4);
   // active powers, each draining toward nothing
-  let px = 22, py = 58;
+  let px = 22, py = 58 + HUDY;
   const byKey = {};
   for (const inst of P.timed) { (byKey[inst.k] = byKey[inst.k] || []).push(inst); }
   for (const k in byKey) {
@@ -1007,8 +1011,8 @@ function drawHud() {
     px += 42; if (px > 250) { px = 22; py += 26; }
   }
   const untilPow = POWER_EVERY - (G.kills % POWER_EVERY);
-  brush(`next power in ${untilPow}`, W / 2, 56, 11, 'rgba(220,200,160,.55)');
-  if (G.msgT > 0) brush(G.msg, W / 2, 88, 22, '#c92222', 'center', Math.min(1, G.msgT * 1.4));
+  brush(`next power in ${untilPow}`, W / 2, 56 + HUDY, 11, 'rgba(220,200,160,.55)');
+  if (G.msgT > 0) brush(G.msg, W / 2, 88 + HUDY, 22, '#c92222', 'center', Math.min(1, G.msgT * 1.4));
   // power notices live in the bottom-right corner, clear of the fight
   const tX = W - 22;
   G.toast.slice(0, 4).forEach((t, i) => {
@@ -1028,7 +1032,7 @@ function drawHud() {
   // warlord health across the top
   const bossAlive = foes.find(f => f.boss && !f.dead);
   if (bossAlive) {
-    const bw2 = W - 260, bx = 130, by = 78;
+    const bw2 = W - 260, bx = 130, by = 78 + HUDY;
     g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(bx, by, bw2, 13);
     const bg3 = g.createLinearGradient(bx, 0, bx + bw2, 0);
     bg3.addColorStop(0, '#7d1010'); bg3.addColorStop(1, '#ff3a2a');
@@ -1051,7 +1055,7 @@ function drawHud() {
 function drawLevelUp() {
   g.fillStyle = 'rgba(14,8,14,.84)'; g.fillRect(0, 0, W, H);
   brush('THE BLADE SHARPENS', W / 2, 96, 34, '#d9c281');
-  brush('choose your path — press 1, 2 or 3', W / 2, 134, 15, '#8a7a6a');
+  brush(MOB.touch ? 'choose your path — tap a card' : 'choose your path — press 1, 2 or 3', W / 2, 134, 15, '#8a7a6a');
   const cw = 250, gap = 26, total = choices.length * cw + (choices.length - 1) * gap;
   choices.forEach((u, i) => {
     const x = W / 2 - total / 2 + i * (cw + gap), y = 200, ch = 180;
@@ -1148,11 +1152,12 @@ function titleScreen() {
   brush('THE SWARM', W / 2, H / 2 - 80, 58, '#c92222');
   brush('群', W / 2, H / 2 - 30, 26, '#9a8a7a');
   brush('one blade against the many', W / 2, H / 2 + 14, 18, '#b9a695');
-  brush('WASD / ARROWS to move — the blade swings itself', W / 2, H / 2 + 54, 15, '#7d6f63');
+  brush(MOB.touch ? 'DRAG THE STICK to move — the blade swings itself'
+                  : 'WASD / ARROWS to move — the blade swings itself', W / 2, H / 2 + 54, 15, '#7d6f63');
   brush('powers stack and FADE — a fresh shard renews the ones you hold', W / 2, H / 2 + 80, 14, '#8a7a5a');
   brush('every 600 souls, a WARLORD walks the field', W / 2, H / 2 + 104, 14, '#8a4a4a');
   if (G.best) brush(`LONGEST STAND — ${Math.floor(G.best / 60)}:${String(G.best % 60).padStart(2, '0')}`, W / 2, H / 2 + 142, 15, '#8a7a5a');
-  brush('SPACE — STAND', W / 2, H - 54, 22, Math.sin(G.t * 3) > 0 ? '#e8d9c8' : '#8a7a6a');
+  brush(MOB.touch ? 'TAP — STAND' : 'SPACE — STAND', W / 2, H - 54, 22, Math.sin(G.t * 3) > 0 ? '#e8d9c8' : '#8a7a6a');
 }
 function deadScreen() {
   render();
@@ -1161,7 +1166,7 @@ function deadScreen() {
   const m = Math.floor(G.run / 60), s = Math.floor(G.run % 60);
   brush(`${m}:${String(s).padStart(2, '0')} · ${G.kills} slain · wave ${G.wave} · ${G.power} powers`, W / 2, H / 2 + 2, 20, '#e8d9c8');
   brush(`LONGEST STAND — ${Math.floor(G.best / 60)}:${String(G.best % 60).padStart(2, '0')}`, W / 2, H / 2 + 40, 15, '#8a7a5a');
-  brush('SPACE — STAND AGAIN', W / 2, H - 54, 20, Math.sin(G.t * 3) > 0 ? '#e8d9c8' : '#8a7a6a');
+  brush(MOB.touch ? 'TAP — STAND AGAIN' : 'SPACE — STAND AGAIN', W / 2, H - 54, 20, Math.sin(G.t * 3) > 0 ? '#e8d9c8' : '#8a7a6a');
 }
 
 let last = performance.now();
