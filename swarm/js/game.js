@@ -242,7 +242,7 @@ function startRun() {
             reach: BASE.reach, arc: BASE.arc, magnet: BASE.magnet, crit: BASE.crit,
             blades: 1, lifesteal: 0, thorn: 0 },
     timed: [], stacks: {}, ward: 0,
-    cd: 0, xp: 0, lvl: 1, next: 9, iframe: 0, swingT: 0, aimA: 0,
+    cd: 0, xp: 0, lvl: 1, next: 18, iframe: 0, swingT: 0, aimA: 0,
     boltCd: 1.4, infT: 0, trail: [],
   };
   recalc();
@@ -573,7 +573,13 @@ function update(dt) {
     if (d < P.magnet) { const pull = 560 * Math.min(1, (P.magnet - d) / P.magnet + 0.4); o.x += (dx / d) * pull * dt; o.y += (dy / d) * pull * dt; }
     if (d < 28) {
       o.got = true; P.xp += o.v; sfx.xp();
-      if (P.xp >= P.next) { P.xp -= P.next; P.lvl++; P.next = Math.round(P.next * 1.42 + 4); rollChoices(); }
+      if (P.xp >= P.next) {
+        P.xp -= P.next; P.lvl++;
+        // every level stretches further than the last: the multiplier itself
+        // climbs with level (capped at 1.8) so late picks are milestones
+        P.next = Math.round(P.next * (1.5 + Math.min(0.3, P.lvl * 0.04)) + 6);
+        rollChoices();
+      }
     }
   }
   orbs = orbs.filter(o => !o.got);
@@ -980,9 +986,19 @@ function drawHud() {
   g.fillStyle = hg; g.fillRect(20, 18 + HUDY, bw * Math.max(0, P.hp / P.maxHp), 15);
   g.strokeStyle = 'rgba(200,60,50,.5)'; g.lineWidth = 1; g.strokeRect(20, 18 + HUDY, bw, 15);
   brush(`${Math.ceil(P.hp)} / ${P.maxHp}`, 26, 25 + HUDY, 11, '#f0e0d0', 'left');
-  g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(20, 38 + HUDY, bw, 6);
-  g.fillStyle = '#d9c281'; g.fillRect(20, 38 + HUDY, bw * Math.min(1, P.xp / P.next), 6);
-  brush('LV ' + P.lvl, 20 + bw + 10, 40 + HUDY, 13, '#d9c281', 'left');
+  // progress toward the next CHOICE (the three cards)
+  const xf = Math.min(1, P.xp / P.next), xbY = 38 + HUDY;
+  g.fillStyle = 'rgba(0,0,0,.62)'; g.fillRect(20, xbY, bw, 11);
+  const xg = g.createLinearGradient(20, 0, 20 + bw, 0);
+  xg.addColorStop(0, '#8a6a24'); xg.addColorStop(1, '#f2d271');
+  g.fillStyle = xg; g.fillRect(20, xbY, bw * xf, 11);
+  if (xf > 0.85) {                       // nearly there — pulse so it is noticed
+    g.save(); g.globalAlpha = 0.3 + 0.3 * Math.sin(G.t * 9);
+    g.fillStyle = '#fff4cc'; g.fillRect(20, xbY, bw * xf, 11); g.restore();
+  }
+  g.strokeStyle = 'rgba(217,194,129,.55)'; g.lineWidth = 1; g.strokeRect(20, xbY, bw, 11);
+  brush(`CHOICE  ${Math.floor(P.xp)} / ${P.next}`, 26, xbY + 6, 10, '#f6ecd0', 'left');
+  brush('LV ' + P.lvl, 20 + bw + 10, xbY + 6, 13, '#d9c281', 'left');
   const m = Math.floor(G.run / 60), s = Math.floor(G.run % 60);
   brush(`${m}:${String(s).padStart(2, '0')}`, W / 2, 30 + HUDY, 30, '#e8d9c8');
   brush('WAVE ' + G.wave, W - 24, 24 + HUDY, 16, '#b9a695', 'right');
@@ -1156,9 +1172,10 @@ function titleScreen() {
   brush('one blade against the many', W / 2, H / 2 + 14, 18, '#b9a695');
   brush(MOB.touch ? 'DRAG THE STICK to move — the blade swings itself'
                   : 'WASD / ARROWS to move — the blade swings itself', W / 2, H / 2 + 54, 15, '#7d6f63');
-  brush('powers stack and FADE — a fresh shard renews the ones you hold', W / 2, H / 2 + 80, 14, '#8a7a5a');
-  brush('every 600 souls, a WARLORD walks the field', W / 2, H / 2 + 104, 14, '#8a4a4a');
-  if (G.best) brush(`LONGEST STAND — ${Math.floor(G.best / 60)}:${String(G.best % 60).padStart(2, '0')}`, W / 2, H / 2 + 142, 15, '#8a7a5a');
+  brush('fill the CHOICE bar to pick one of three lasting boons', W / 2, H / 2 + 80, 14, '#c2a862');
+  brush('powers stack and FADE — a fresh shard renews the ones you hold', W / 2, H / 2 + 104, 14, '#8a7a5a');
+  brush('every 600 souls, a WARLORD walks the field', W / 2, H / 2 + 128, 14, '#8a4a4a');
+  if (G.best) brush(`LONGEST STAND — ${Math.floor(G.best / 60)}:${String(G.best % 60).padStart(2, '0')}`, W / 2, H / 2 + 164, 15, '#8a7a5a');
   brush(MOB.touch ? 'TAP — STAND' : 'SPACE — STAND', W / 2, H - 54, 22, Math.sin(G.t * 3) > 0 ? '#e8d9c8' : '#8a7a6a');
 }
 function deadScreen() {
