@@ -86,6 +86,7 @@ export function initMobile(opts = {}) {
     chip.setAttribute('aria-label', 'Toggle fullscreen');
     chip.addEventListener('click', (e) => { e.preventDefault(); toggleFullscreen(); });
     document.body.appendChild(chip);
+    document.body.classList.add('ra-has-full');
     document.addEventListener('fullscreenchange', () => { chip.textContent = inFullscreen() ? '✕' : '⛶'; });
   }
 
@@ -179,4 +180,56 @@ export function fitCanvas(cv, opts = {}) {
   cv.width = Math.max(minW, Math.min(maxW, target));
   cv.height = designH;
   return { w: cv.width, h: cv.height };
+}
+
+/* ------------------------------ mute ------------------------------ */
+// One setting for the whole arcade: mute in THE SWARM and BLADE DASH is
+// already quiet when you get there. Games gate their own sound primitives on
+// isMuted(), so nothing is even scheduled while muted.
+const MUTE_KEY = 'ronin:muted';
+let muted = false;
+try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (_) {}
+
+/** Call at the top of every sound primitive. */
+export function isMuted() { return muted; }
+
+export function setMuted(v) {
+  muted = !!v;
+  try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (_) {}
+  document.body.classList.toggle('ra-muted', muted);
+  return muted;
+}
+
+/* Speaker chip, top right. Shown on every device — a phone on a quiet train
+   and a laptop in an office both want this button. */
+export function initMute() {
+  const api = { get muted() { return muted; }, toggle };
+  if (document.getElementById('ra-mute')) return api;
+
+  const b = document.createElement('button');
+  b.id = 'ra-mute';
+  b.className = 'ra-chip ra-mute';
+  const paint = () => {
+    b.textContent = muted ? '🔇' : '🔊';
+    b.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
+    b.setAttribute('aria-pressed', muted ? 'true' : 'false');
+  };
+  function toggle() { setMuted(!muted); paint(); }
+
+  b.addEventListener('click', (e) => { e.preventDefault(); toggle(); });
+  // the chip sits over the canvas; do not let the tap reach the game
+  b.addEventListener('pointerdown', (e) => e.stopPropagation());
+  b.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); toggle(); }, { passive: false });
+
+  // M mutes, captured so the game never sees the key and starts a run
+  addEventListener('keydown', (e) => {
+    if (e.code !== 'KeyM' || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+    e.stopPropagation();
+    toggle();
+  }, true);
+
+  paint();
+  document.body.appendChild(b);
+  document.body.classList.toggle('ra-muted', muted);
+  return api;
 }

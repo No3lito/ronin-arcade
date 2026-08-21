@@ -3,8 +3,9 @@
 // 16-frame dash strips generated from his master image. A procedurally
 // animated skeleton stands in until the strips finish loading.
 import { loadStrips, drawSprite, frameOf } from '../../shared/sprites.js';
-import { initMobile, fitCanvas } from '../../shared/mobile.js';
+import { initMobile, fitCanvas, initMute, isMuted } from '../../shared/mobile.js';
 const MOB = initMobile({ landscape: true });
+initMute();
 
 const cv = document.getElementById('game');
 // widen to the phone's aspect so nothing is wasted on black bars
@@ -26,6 +27,7 @@ function audio() {
   return ac;
 }
 function tone(f0, f1, dur, type = 'square', vol = 0.18) {
+  if (isMuted()) return;
   const c = audio(), t = c.currentTime;
   const o = c.createOscillator(), v = c.createGain();
   o.type = type; o.frequency.setValueAtTime(f0, t);
@@ -34,6 +36,7 @@ function tone(f0, f1, dur, type = 'square', vol = 0.18) {
   o.connect(v).connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
 }
 function noiseS(dur, vol, freq, q = 1) {
+  if (isMuted()) return;
   const c = audio(), t = c.currentTime;
   const s = c.createBufferSource(); s.buffer = noiseBuf;
   const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;

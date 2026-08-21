@@ -47,7 +47,11 @@ body {
 }
 .ra-back { left: calc(env(safe-area-inset-left) + 8px); }
 .ra-full { right: calc(env(safe-area-inset-right) + 8px); font-size: 15px; padding: 6px 11px; }
-body.ra-touch .ra-chip { padding: 10px 14px; }   /* fat-finger target */
+body.ra-touch .ra-chip {                      /* fat-finger target: 44px min */
+  padding: 10px 14px;
+  min-height: 44px; min-width: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
 
 /* ---- rotate-your-phone gate (landscape games only) ---- */
 #ra-rotate {
@@ -101,3 +105,12 @@ body.ra-touch .ra-pad { display: block; }
   pointer-events: auto; text-align: center;
 }
 .ra-btn:active { background: rgba(220, 60, 40, .75); transform: scale(.94); }
+
+/* ---- mute chip (top right, beside fullscreen when that exists) ---- */
+.ra-mute {
+  right: calc(env(safe-area-inset-right) + 8px);
+  font-size: 15px; padding: 6px 11px; line-height: 1;
+  cursor: pointer;
+}
+body.ra-has-full .ra-mute { right: calc(env(safe-area-inset-right) + 58px); }
+.ra-mute[aria-pressed="true"] { opacity: .58; border-color: rgba(255,150,90,.2); }

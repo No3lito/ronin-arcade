@@ -2,8 +2,9 @@
 // 10 tile areas · 4 exits each · paths re-knot every 30 seconds ·
 // find THE MAW. NES-Zelda look: flat-shaded pixel tiles, flip-screen rooms.
 import { loadImage } from '../../shared/sprites.js';
-import { initMobile, bindStick, bindButton, fitCanvas } from '../../shared/mobile.js';
+import { initMobile, bindStick, bindButton, fitCanvas, initMute, isMuted } from '../../shared/mobile.js';
 const MOB = initMobile({"landscape":true});
+initMute();
 
 const W = 960, H = 540, TS = 60, COLS = 16, ROWS = 9;
 const SHIFT_SECONDS = 30;
@@ -25,6 +26,7 @@ function audio() {
   return ac;
 }
 function bleep(f0, f1, dur, type = 'square', vol = 0.18) {
+  if (isMuted()) return;
   const c = audio(), t = c.currentTime;
   const o = c.createOscillator(), v = c.createGain();
   o.type = type; o.frequency.setValueAtTime(f0, t);

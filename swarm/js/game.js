@@ -2,9 +2,10 @@
 // A wide burning field, a blade that swings itself, and a horde that grows
 // exactly as fast as you do.
 import { loadStrips, drawSprite, frameOf } from '../../shared/sprites.js';
-import { initMobile, bindStick, fitCanvas } from '../../shared/mobile.js';
+import { initMobile, bindStick, fitCanvas, initMute, isMuted } from '../../shared/mobile.js';
 
 const MOB = initMobile({ landscape: true });
+initMute();
 
 const cv = document.getElementById('cv');
 // on a phone, widen the view to the screen's aspect rather than letterbox it
@@ -81,6 +82,7 @@ loadStrips({
 let AC = null;
 function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch {} } return AC; }
 function tone(f, dur, type = 'sine', vol = 0.12, slideTo = null) {
+  if (isMuted()) return;
   const a = ac(); if (!a) return;
   const o = a.createOscillator(), gn = a.createGain();
   o.type = type; o.frequency.setValueAtTime(f, a.currentTime);
