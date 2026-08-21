@@ -68,7 +68,7 @@ Open VS Code. Press `Ctrl+Shift+P` (Mac: `Cmd+Shift+P`), type `git clone`, press
 then paste the repo address:
 
 ```
-https://github.com/no3lito/ronin-arcade.git
+https://github.com/No3lito/ronin-arcade.git
 ```
 
 Pick a folder (Desktop is fine). When it asks "Would you like to open the cloned
