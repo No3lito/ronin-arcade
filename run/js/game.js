@@ -682,8 +682,16 @@ function sceneTitle() {
   if (G.best > 0) brush('BEST — ' + G.best + 'm', W / 2, 300, 16, '#ff8a5a');
   if (Math.sin(G.t * 4) > -0.2) brush(touchMode ? 'TAP TO RUN' : 'PRESS ANY KEY', W / 2, 350, 22, '#e8d9c8');
   brush(touchMode ? 'GUIDE button (top left)' : 'T — how to run', W / 2, 384, 13, '#ff8a5a');
-  if (key.KeyT) { key.KeyT = false; G.scene = 'guide'; G.t = 0; return; }
+  if (key.KeyT) { key.KeyT = false; openGuide(); return; }
   if (anyPress) startRun();
+}
+function openGuide() {
+  if (G.scene === 'guide') return;
+  G.guideFrom = G.scene;
+  G.scene = 'guide'; G.t = 0;
+}
+function closeGuide() {
+  G.scene = G.guideFrom || 'title'; G.t = 0; G.guideFrom = null;
 }
 function sceneGuide() {
   g.fillStyle = '#0a0608'; g.fillRect(0, 0, W, H);
@@ -699,8 +707,12 @@ function sceneGuide() {
     brush(r[0], 130, 130 + i * 62, 19, '#ff8a5a', 'left');
     brush(r[1], 130, 158 + i * 62, 14, '#d8c9b8', 'left');
   });
-  if (Math.sin(G.t * 4) > -0.2) brush(touchMode ? 'TAP — BACK' : 'ANY KEY — BACK', W / 2, H - 26, 15, '#e8d9c8');
-  if (G.t > 0.4 && anyPress) { G.scene = 'title'; G.t = 0; }
+  // says RESUME when the guide was opened mid-run, BACK from a menu
+  const back = G.guideFrom === 'run'
+    ? (touchMode ? 'TAP — RESUME' : 'ANY KEY — RESUME')
+    : (touchMode ? 'TAP — BACK' : 'ANY KEY — BACK');
+  if (Math.sin(G.t * 4) > -0.2) brush(back, W / 2, H - 26, 15, '#e8d9c8');
+  if (G.t > 0.4 && anyPress) closeGuide();
 }
 function sceneRun(dt) {
   update(dt);
@@ -735,6 +747,7 @@ let last = 0;
 function loop(ts) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (ts - last) / 1000); last = ts;
+  if (G.scene === 'guide') { jumpQueued = false; dashQueued = false; }
   G.t += dt;
   switch (G.scene) {
     case 'title': sceneTitle(); break;
@@ -749,4 +762,4 @@ resetPlayer();
 requestAnimationFrame(loop);
 window.__dash = { G, P, key, get segs() { return segs; }, get obstacles() { return obstacles; }, startRun, jump: () => { jumpQueued = true; }, dash: () => { dashQueued = true; }, press: () => { anyPress = true; } };
 const guideBtn = document.getElementById('guideBtn');
-if (guideBtn) guideBtn.onclick = (e) => { e.preventDefault(); if (G.scene === 'title' || G.scene === 'dead') { G.scene = 'guide'; G.t = 0; } };
+if (guideBtn) guideBtn.onclick = (e) => { e.preventDefault(); G.scene === 'guide' ? closeGuide() : openGuide(); };

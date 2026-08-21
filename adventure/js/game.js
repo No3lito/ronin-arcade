@@ -478,7 +478,7 @@ function sceneTitle() {
     W / 2, 395, 14, '#9a8a7a');
   brush(touchMode ? 'GUIDE button (top left)' : 'T — how to survive', W / 2, 422, 13, '#ff8a5a');
   if (Math.sin(G_.t * 4) > -0.2) brush(touchMode ? 'TAP TO WANDER' : 'PRESS ANY KEY', W / 2, 470, 20, '#e8d9c8');
-  if (key.KeyT) { key.KeyT = false; G_.scene = 'guide'; G_.t = 0; return; }
+  if (key.KeyT) { key.KeyT = false; openGuide(); return; }
   if (anyPress) {
     G_.scene = 'play'; G_.t = 0; G_.timer = 0; G_.shiftT = SHIFT_SECONDS;
     G_.visited = new Set(); P.hp = P.maxHp;
@@ -487,6 +487,14 @@ function sceneTitle() {
     enterArea(0, 'W');
     P.x = W / 2; P.y = H / 2;
   }
+}
+function openGuide() {
+  if (G_.scene === 'guide') return;
+  G_.guideFrom = G_.scene;
+  G_.scene = 'guide'; G_.t = 0;
+}
+function closeGuide() {
+  G_.scene = G_.guideFrom || 'title'; G_.t = 0; G_.guideFrom = null;
 }
 function sceneGuide() {
   g.fillStyle = '#070405'; g.fillRect(0, 0, W, H);
@@ -506,8 +514,12 @@ function sceneGuide() {
     brush(r[0], 150, 120 + i * 58, 18, '#ff8a5a', 'left');
     brush(r[1], 150, 146 + i * 58, 13, '#d8c9b8', 'left');
   });
-  if (Math.sin(G_.t * 4) > -0.2) brush(touchMode ? 'TAP — BACK' : 'ANY KEY — BACK', W / 2, H - 24, 15, '#e8d9c8');
-  if (G_.t > 0.4 && anyPress) { G_.scene = 'title'; G_.t = 0; }
+  // says RESUME when the guide was opened mid-run, BACK from a menu
+  const back = G_.guideFrom === 'play'
+    ? (touchMode ? 'TAP — RESUME' : 'ANY KEY — RESUME')
+    : (touchMode ? 'TAP — BACK' : 'ANY KEY — BACK');
+  if (Math.sin(G_.t * 4) > -0.2) brush(back, W / 2, H - 24, 15, '#e8d9c8');
+  if (G_.t > 0.4 && anyPress) closeGuide();
 }
 function scenePlay(dt) {
   update(dt);
@@ -548,6 +560,7 @@ let last = 0;
 function loop(ts) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (ts - last) / 1000); last = ts;
+  if (G_.scene === 'guide') key.KeyJ = false;
   G_.t += dt;
   // squash the whole-tile grid into the exact width the phone gives us
   g.setTransform(SQUASH, 0, 0, 1, 0, 0);
@@ -568,7 +581,7 @@ buildTiles();
 requestAnimationFrame(loop);
 window.__adv = { G_, P, key, get enemies() { return enemies; }, get links() { return links; }, press: () => { anyPress = true; }, enterArea, reshuffle, AREAS };
 const guideBtn = document.getElementById('guideBtn');
-if (guideBtn) guideBtn.onclick = (e) => { e.preventDefault(); if (G_.scene === 'title' || G_.scene === 'win' || G_.scene === 'dead') { G_.scene = 'guide'; G_.t = 0; } };
+if (guideBtn) guideBtn.onclick = (e) => { e.preventDefault(); G_.scene === 'guide' ? closeGuide() : openGuide(); };
 
 loadImage('assets/hero-top.webp').then((img) => {
   const ratio = img.naturalWidth / img.naturalHeight;
