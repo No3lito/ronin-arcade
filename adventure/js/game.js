@@ -6,15 +6,26 @@ import { initMobile, bindStick, bindButton, fitCanvas, initMute, isMuted } from 
 const MOB = initMobile({"landscape":true});
 initMute();
 
-const W = 960, H = 540, TS = 60, COLS = 16, ROWS = 9;
+const TS = 60, ROWS = 9;
+// The MAP reaches both edges, not the map plus padding: the room gains whole
+// extra columns to match the phone. Columns must be whole tiles and even (so
+// the N/S doors stay centred), so the grid lands within half a tile of the
+// screen shape; that remainder is absorbed by a <3% horizontal squash at draw
+// time, which keeps the canvas exactly the phone's aspect with no bars.
+const COLS = (() => {
+  if (!MOB.touch) return 16;
+  const vw = Math.max(innerWidth, innerHeight), vh = Math.min(innerWidth, innerHeight);
+  const want = Math.round((ROWS * (vw / vh)) / 2) * 2;
+  return Math.max(16, Math.min(22, want));
+})();
+const W = COLS * TS, H = ROWS * TS;
+const CMID = COLS / 2;                 // the two centre columns carry the doors
+const DOORC = [CMID - 1, CMID];
 const SHIFT_SECONDS = 30;
 const cv = document.getElementById('game');
-// The room is a fixed 16x9 grid and must stay that way — widening it would
-// move the doors. Instead the CANVAS grows to the phone's shape and the room
-// is centred in it, with the chamber's own stone carried out to both edges.
-// On desktop fitCanvas is a no-op, OFFX is 0, and nothing below changes.
-fitCanvas(cv, { designH: H, minW: W, maxW: 1400 });
-const OFFX = Math.round((cv.width - W) / 2);
+fitCanvas(cv, { designH: H, minW: 960, maxW: 1600 });
+// <3% either way; exactly 1 on desktop and on a true 20:9 phone
+const SQUASH = cv.width / W;
 const g = cv.getContext('2d');
 g.imageSmoothingEnabled = false;
 
@@ -191,6 +202,18 @@ const AREAS = [
   { name: 'BONE FIELDS', biome: 'ash', foes: 3, map: [
     'rrrrrrr..rrrrrrr','r..G.....G...G.r','r....e.........r','r.G....G....G..r','.......e........','r..G....G....G.r','r...........e..r','r.G...G....G...r','rrrrrrr..rrrrrrr'] },
 ];
+// The maps are authored 16 wide. Grow them by repeating the column just
+// inside each border, so borders stay solid and open ground stays open.
+// Equal insertion on both sides keeps the N/S door gap dead centre.
+(function widenMaps() {
+  if (COLS === 16) return;
+  const pad = (COLS - 16) / 2;
+  const tame = (ch) => ('ePLTG'.includes(ch) ? '.' : ch);   // never clone a spawn or a prop
+  for (const a of AREAS) {
+    a.map = a.map.map((row) => row[0] + tame(row[1]).repeat(pad) +
+      row.slice(1, -1) + tame(row[row.length - 2]).repeat(pad) + row[row.length - 1]);
+  }
+})();
 const WAKE_SHIFTS = 7;   // the Maw sleeps this many shifts (3.5 min) before it can appear
 const SOLID = { t: 1, r: 1, w: 1, s: 1, T: 1, L: 1, G: 1 };
 const DIRS = ['N', 'E', 'S', 'W'];
@@ -237,7 +260,7 @@ function enterArea(idx, fromDir) {
   // sanitize: the door corridors (center column + center row) must never be
   // blocked by solid tiles — items never black the entrances
   const grid = AREAS[idx].map.map((s) => s.split(''));
-  for (let r = 1; r < ROWS - 1; r++) for (const c of [7, 8]) {
+  for (let r = 1; r < ROWS - 1; r++) for (const c of DOORC) {
     if (SOLID[grid[r][c]] === 1) grid[r][c] = '.';
   }
   for (let c = 1; c < COLS - 1; c++) {
@@ -352,22 +375,6 @@ function brush(txt, x, y, size, col, align = 'center', alpha = 1) {
   g.fillStyle = col; g.fillText(txt, x, y);
   g.restore();
 }
-// Fill the space either side of the room with the current land's wall tile,
-// sunk in shadow so the lit room still reads as the place you are standing.
-function drawMargins() {
-  const set = tilesets[AREAS[G_.area].biome];
-  const wall = set && set.s;
-  if (!wall) return;
-  const right = cv.width - (OFFX + W);
-  for (const band of [[0, OFFX], [OFFX + W, right]]) {
-    for (let x = band[0]; x < band[0] + band[1]; x += TS) {
-      for (let y = 0; y < H; y += TS) g.drawImage(wall, x, y, TS, TS);
-    }
-  }
-  g.fillStyle = 'rgba(4,2,3,.58)';
-  g.fillRect(0, 0, OFFX, H);
-  g.fillRect(OFFX + W, 0, right, H);
-}
 function drawTiles() {
   const set = tilesets[AREAS[G_.area].biome];
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
@@ -382,9 +389,9 @@ function drawTiles() {
   if (G_.area === G_.gateArea) {
     // the Maw manifests at the center of whatever land it haunts this shift
     const set2 = tilesets[AREAS[G_.area].biome];
-    g.drawImage(set2.T, 6 * TS, 3 * TS, TS, TS); g.drawImage(set2.T, 9 * TS, 3 * TS, TS, TS);
-    g.drawImage(set2.P, 7 * TS, 3 * TS, TS, TS); g.drawImage(set2.P, 8 * TS, 3 * TS, TS, TS);
-    g.drawImage(set2.P, 7 * TS, 4 * TS, TS, TS); g.drawImage(set2.P, 8 * TS, 4 * TS, TS, TS);
+    g.drawImage(set2.T, (CMID - 2) * TS, 3 * TS, TS, TS); g.drawImage(set2.T, (CMID + 1) * TS, 3 * TS, TS, TS);
+    g.drawImage(set2.P, DOORC[0] * TS, 3 * TS, TS, TS); g.drawImage(set2.P, DOORC[1] * TS, 3 * TS, TS, TS);
+    g.drawImage(set2.P, DOORC[0] * TS, 4 * TS, TS, TS); g.drawImage(set2.P, DOORC[1] * TS, 4 * TS, TS, TS);
     const pulse = 0.4 + 0.25 * Math.sin(G_.t * 2.4);
     const gr = g.createRadialGradient(W / 2, H / 2 - 10, 6, W / 2, H / 2 - 10, 130);
     gr.addColorStop(0, `rgba(160,15,15,${pulse})`); gr.addColorStop(1, 'rgba(0,0,0,0)');
@@ -542,12 +549,8 @@ function loop(ts) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (ts - last) / 1000); last = ts;
   G_.t += dt;
-  if (OFFX > 0) {
-    g.fillStyle = '#070405'; g.fillRect(0, 0, cv.width, H);
-    if (G_.scene === 'play') drawMargins();
-  }
-  g.save();
-  g.translate(OFFX, 0);
+  // squash the whole-tile grid into the exact width the phone gives us
+  g.setTransform(SQUASH, 0, 0, 1, 0, 0);
   switch (G_.scene) {
     case 'boot':
       g.fillStyle = '#070405'; g.fillRect(0, 0, W, H);
@@ -559,7 +562,6 @@ function loop(ts) {
     case 'dead': sceneDead(); break;
     case 'win': sceneWin(); break;
   }
-  g.restore();
   anyPress = false;
 }
 buildTiles();
