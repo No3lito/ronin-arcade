@@ -15,7 +15,10 @@
   html, body { width:100%; background:#140e16; overflow:hidden; }
   body { font-family:"Yu Mincho","Hiragino Mincho ProN",Georgia,serif; }
   #cv {
-    max-width:100%; max-height:100%; aspect-ratio:960/600;
+    /* width GROWS to the window; max-width only ever shrinks, which pinned
+       this canvas at its native 960x600 on any monitor bigger than that.
+       The calc caps it so the 16:10 frame can never overflow vertically. */
+    width:min(100vw, calc(100vh * 960 / 600)); aspect-ratio:960/600; display:block;
     border:1px solid rgba(255,150,90,.26); border-radius:5px;
     box-shadow:0 0 80px rgba(200,70,50,.18); touch-action:none;
   }
