@@ -2,16 +2,18 @@
 // A wide burning field, a blade that swings itself, and a horde that grows
 // exactly as fast as you do.
 import { loadStrips, drawSprite, frameOf } from '../../shared/sprites.js';
-import { initMobile, bindStick, fitCanvas, initMute, isMuted } from '../../shared/mobile.js';
+import { initMobile, bindStick, fitCanvasCrisp, initMute, isMuted } from '../../shared/mobile.js';
 
 const MOB = initMobile({ landscape: true });
 initMute();
 
 const cv = document.getElementById('cv');
-// on a phone, widen the view to the screen's aspect rather than letterbox it
-fitCanvas(cv, { designH: 600, minW: 960, maxW: 1500 });
+// The view is always 600 logical units tall — that fixes the zoom and the
+// difficulty. What changes is how finely it is rasterised: the buffer is
+// sized to the real pixels on screen so nothing is upscaled by CSS.
+const VIEW = fitCanvasCrisp(cv, { designH: 600 });
 const g = cv.getContext('2d');
-const W = cv.width, H = cv.height;
+const W = VIEW.w, H = VIEW.h, RS = VIEW.scale;
 const WORLD = { w: 2800, h: 1900 };
 const cam = { x: 0, y: 0 };
 
@@ -183,8 +185,9 @@ function recalc() {
 let groundCv = null;
 function buildGround() {
   groundCv = document.createElement('canvas');
-  groundCv.width = 700; groundCv.height = 700;
+  groundCv.width = Math.round(700 * RS); groundCv.height = Math.round(700 * RS);
   const c = groundCv.getContext('2d');
+  c.scale(RS, RS);          // authored in 700x700 logical units, stored at device res
   const bg = c.createLinearGradient(0, 0, 700, 700);
   bg.addColorStop(0, '#2c2028'); bg.addColorStop(0.5, '#33242c'); bg.addColorStop(1, '#291d24');
   c.fillStyle = bg; c.fillRect(0, 0, 700, 700);
@@ -635,7 +638,7 @@ function drawWorld() {
     const x0 = Math.floor(cam.x / ts) * ts, y0 = Math.floor(cam.y / ts) * ts;
     for (let x = x0; x < cam.x + W + ts; x += ts)
       for (let y = y0; y < cam.y + H + ts; y += ts)
-        g.drawImage(groundCv, SX(x), SY(y));
+        g.drawImage(groundCv, SX(x), SY(y), ts, ts);
   } else { g.fillStyle = '#2c2028'; g.fillRect(0, 0, W, H); }
   const mg = g.createRadialGradient(W / 2, H * 0.42, 40, W / 2, H * 0.42, 620);
   mg.addColorStop(0, 'rgba(255,170,110,.13)'); mg.addColorStop(1, 'rgba(120,40,40,0)');
@@ -976,7 +979,7 @@ function drawPowerAuras() {
 // the chips are ~46 screen px tall; convert that into canvas units so the
 // HUD clears them no matter how much the canvas is scaled down on the phone
 const HUDY = MOB.touch
-  ? Math.round(46 * (cv.width / Math.max(window.innerWidth, window.innerHeight, 1)))
+  ? Math.round(46 * (W / Math.max(window.innerWidth, window.innerHeight, 1)))
   : 0;
 function drawHud() {
   const bw = 250;
@@ -1159,7 +1162,7 @@ function render() {
 function bgOnly() {
   g.fillStyle = '#241a28'; g.fillRect(0, 0, W, H);
   if (groundCv) for (let x = -700; x < W + 700; x += 700) for (let y = -700; y < H + 700; y += 700)
-    g.drawImage(groundCv, x - (G.t * 12) % 700, y - (G.t * 6) % 700);
+    g.drawImage(groundCv, x - (G.t * 12) % 700, y - (G.t * 6) % 700, 700, 700);
   const mg = g.createRadialGradient(W / 2, H * 0.42, 40, W / 2, H * 0.42, 520);
   mg.addColorStop(0, 'rgba(255,170,110,.18)'); mg.addColorStop(1, 'rgba(120,40,40,0)');
   g.fillStyle = mg; g.fillRect(0, 0, W, H);
@@ -1191,6 +1194,7 @@ function deadScreen() {
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.045, (now - last) / 1000); last = now;
+  g.setTransform(RS, 0, 0, RS, 0, 0);   // draw in logical units, rasterise at device res
   if (G.scene === 'play') { update(dt); render(); }
   else if (G.scene === 'levelup') { G.t += dt; render(); }
   else { G.t += dt; if (G.scene === 'title') titleScreen(); else deadScreen(); }

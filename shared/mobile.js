@@ -233,3 +233,31 @@ export function initMute() {
   document.body.classList.toggle('ra-muted', muted);
   return api;
 }
+
+/* Size a canvas so its BUFFER matches the pixels it actually occupies on
+   screen, instead of drawing small and letting CSS upscale it.
+
+   `designH` is the game's logical height and never changes, so the camera,
+   the zoom and the difficulty are all untouched — only the rasterisation gets
+   finer. Returns the LOGICAL size to use as W/H plus the scale to hand to
+   ctx.setTransform() once per frame.
+
+   Call after layout (the element's CSS box is what it measures). */
+export function fitCanvasCrisp(cv, opts = {}) {
+  const { designH = cv.height, maxScale = 2.5, maxPixels = 3.2e6 } = opts;
+  const r = cv.getBoundingClientRect();
+  const dw = Math.max(1, r.width), dh = Math.max(1, r.height);
+  const dpr = window.devicePixelRatio || 1;
+
+  // one logical unit -> this many device pixels
+  let scale = Math.min((dh * dpr) / designH, maxScale);
+  // a retina phone can ask for ~10x the fill cost; keep the frame affordable
+  const aspect = dw / dh;
+  const budget = Math.sqrt(maxPixels / (designH * designH * aspect));
+  scale = Math.max(1, Math.min(scale, budget));
+
+  const w = Math.round(designH * aspect);        // logical width, screen-shaped
+  cv.width = Math.round(w * scale);
+  cv.height = Math.round(designH * scale);
+  return { w, h: designH, scale };
+}
