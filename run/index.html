@@ -17,13 +17,13 @@
   #wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
   #game { width:min(100vw, calc(100vh * 16 / 9)); aspect-ratio:16/9; display:block; }
   #backArcade {
-    position:fixed; top:10px; left:10px; z-index:40; color:#c9a;
+    color:#c9a;
     background:rgba(7,4,5,.72); border:1px solid rgba(200,40,40,.45);
     padding:5px 12px; border-radius:4px; font:600 12px/1.4 serif;
     letter-spacing:.12em; text-decoration:none; opacity:.75;
   }
   #guideBtn {
-    position:fixed; top:10px; left:118px; z-index:40; color:#e8b48a;
+    color:#e8b48a;
     background:rgba(7,4,5,.72); border:1px solid rgba(200,40,40,.45);
     padding:5px 12px; border-radius:4px; font:600 12px/1.4 serif;
     letter-spacing:.12em; text-decoration:none; opacity:.85;
@@ -46,14 +46,15 @@
   body.ra-touch #game { width:100%; height:100%; object-fit:contain; aspect-ratio:auto; }
   body.ra-touch #tJump { right:calc(env(safe-area-inset-right) + 26px); bottom:calc(env(safe-area-inset-bottom) + 26px); }
   body.ra-touch #tDash { left:calc(env(safe-area-inset-left) + 26px);  bottom:calc(env(safe-area-inset-bottom) + 26px); }
-  body.ra-touch #backArcade, body.ra-touch #guideBtn { top:calc(env(safe-area-inset-top) + 8px); }
-  body.ra-touch #backArcade { left:calc(env(safe-area-inset-left) + 8px); }
+  /* placement is handled by .ra-topleft in shared/mobile.css */
   body.ra-touch #touchUI { display:block; }
 </style>
 </head>
 <body>
-<a id="backArcade" href="../">&#10554; ARCADE</a>
-<a id="guideBtn" href="#">? GUIDE</a>
+<div class="ra-topleft">
+  <a id="backArcade" href="../">&#10554; ARCADE</a>
+  <a id="guideBtn" href="#">? GUIDE</a>
+</div>
 <div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
 <div id="touchUI">
   <div class="tbtn" id="tJump">JUMP</div>

@@ -114,3 +114,21 @@ body.ra-touch .ra-pad { display: block; }
 }
 body.ra-has-full .ra-mute { right: calc(env(safe-area-inset-right) + 58px); }
 .ra-mute[aria-pressed="true"] { opacity: .58; border-color: rgba(255,150,90,.2); }
+
+/* ---- top-left button row ----
+   ARCADE and GUIDE live in one flex row. Anchoring the ROW to the safe area
+   (rather than each button separately) means a notch inset moves them together
+   — previously ARCADE shifted right by the inset while GUIDE stayed put, and
+   on a notched phone in landscape they overlapped. */
+.ra-topleft {
+  position: fixed; z-index: 40;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: calc(env(safe-area-inset-left) + 8px);
+  display: flex; align-items: stretch; gap: 8px;
+}
+.ra-topleft > a {
+  position: static;
+  display: inline-flex; align-items: center;
+  white-space: nowrap;
+}
+body.ra-touch .ra-topleft > a { min-height: 44px; padding: 5px 14px; }
