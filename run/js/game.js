@@ -53,7 +53,7 @@ const S = {
 
 /* ------------------------------ input ------------------------------ */
 const key = {};
-let anyPress = false, touchMode = false;
+let anyPress = false, touchMode = MOB.touch;   // a phone is a phone before it is ever touched
 let jumpQueued = false, dashQueued = false;
 addEventListener('keydown', (e) => {
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight'].includes(e.code)) e.preventDefault();
@@ -65,7 +65,9 @@ addEventListener('keydown', (e) => {
 addEventListener('keyup', (e) => { key[e.code] = false; });
 function bindBtn(id, fn) {
   const el = document.getElementById(id);
-  el.addEventListener('touchstart', (e) => { e.preventDefault(); fn(); anyPress = true; }, { passive: false });
+  const hit = (e) => { e.preventDefault(); fn(); anyPress = true; };
+  el.addEventListener('touchstart', hit, { passive: false });
+  el.addEventListener('pointerdown', hit);   // queuing the same flag twice in a frame is still one action
 }
 bindBtn('tJump', () => { jumpQueued = true; });
 bindBtn('tDash', () => { dashQueued = true; });
@@ -670,7 +672,10 @@ function sceneTitle() {
   brush('BLADE DASH', W / 2, 120, 60, '#c92222');
   brush('刃 走', W / 2, 172, 24, '#e8d9c8');
   brush('run the burning rooftops · how far can you go?', W / 2, 235, 16, '#9a8a7a');
-  brush('SPACE jump · SPACE again — double jump · SHIFT (or J) — DASH through the cracked walls', W / 2, 265, 14, '#9a8a7a');
+  brush(touchMode
+    ? 'JUMP to leap · JUMP again — double jump · DASH through the cracked walls'
+    : 'SPACE jump · SPACE again — double jump · SHIFT (or J) — DASH through the cracked walls',
+    W / 2, 265, 14, '#9a8a7a');
   if (G.best > 0) brush('BEST — ' + G.best + 'm', W / 2, 300, 16, '#ff8a5a');
   if (Math.sin(G.t * 4) > -0.2) brush(touchMode ? 'TAP TO RUN' : 'PRESS ANY KEY', W / 2, 350, 22, '#e8d9c8');
   brush(touchMode ? 'GUIDE button (top left)' : 'T — how to run', W / 2, 384, 13, '#ff8a5a');

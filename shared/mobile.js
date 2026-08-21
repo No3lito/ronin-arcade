@@ -6,9 +6,13 @@
 //   const M = initMobile({ landscape: true });
 //   if (M.touch) { ...show pads... }
 
-const isTouch = matchMedia('(pointer: coarse)').matches ||
-                'ontouchstart' in window ||
-                navigator.maxTouchPoints > 0;
+// A phone is not "anything that can be touched" — a Windows touchscreen
+// laptop reports maxTouchPoints: 10 and still wants keyboard + mouse. It is
+// touch hardware AND touch as the primary way in: no hover, coarse pointer.
+const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+const touchFirst = matchMedia('(pointer: coarse)').matches ||
+                   matchMedia('(hover: none)').matches;
+const isTouch = hasTouch && touchFirst;
 
 // iPhone Safari has no Fullscreen API (iPad does). Detect so we can tell the
 // player the truth instead of showing a button that does nothing.
@@ -107,7 +111,7 @@ export function initMobile(opts = {}) {
 /* Bind a round thumb stick. Returns a live vector you can read each frame. */
 export function bindStick(el, knob) {
   const v = { x: 0, y: 0, active: false };
-  let id = null, cx = 0, cy = 0, R = 52;
+  let id = null, cx = 0, cy = 0, R = 52, viaTouch = false;
   const setKnob = (dx, dy) => {
     if (knob) knob.style.transform = `translate(${dx}px, ${dy}px)`;
   };
@@ -128,7 +132,7 @@ export function bindStick(el, knob) {
   };
   const end = () => { id = null; v.active = false; v.x = v.y = 0; setKnob(0, 0); };
 
-  el.addEventListener('touchstart', (e) => { e.preventDefault(); start(e.changedTouches[0]); }, { passive: false });
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); viaTouch = true; start(e.changedTouches[0]); }, { passive: false });
   el.addEventListener('touchmove', (e) => {
     e.preventDefault();
     for (const t of e.changedTouches) if (t.identifier === id) move(t);
@@ -137,6 +141,19 @@ export function bindStick(el, knob) {
     for (const t of e.changedTouches) if (t.identifier === id) end();
   }, { passive: false });
   el.addEventListener('touchcancel', end, { passive: false });
+
+  // Pointer events cover stylus, mouse, and the browsers that never emit
+  // touch events. viaTouch keeps a real finger from being handled twice.
+  el.addEventListener('pointerdown', (e) => {
+    if (viaTouch) return;
+    e.preventDefault();
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    start({ identifier: e.pointerId, clientX: e.clientX, clientY: e.clientY });
+  });
+  el.addEventListener('pointermove', (e) => { if (!viaTouch && id === e.pointerId) move(e); });
+  const pEnd = (e) => { if (!viaTouch && id === e.pointerId) end(); };
+  el.addEventListener('pointerup', pEnd);
+  el.addEventListener('pointercancel', pEnd);
   return v;
 }
 

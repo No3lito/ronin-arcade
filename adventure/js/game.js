@@ -2,7 +2,7 @@
 // 10 tile areas · 4 exits each · paths re-knot every 30 seconds ·
 // find THE MAW. NES-Zelda look: flat-shaded pixel tiles, flip-screen rooms.
 import { loadImage } from '../../shared/sprites.js';
-import { initMobile } from '../../shared/mobile.js';
+import { initMobile, bindStick, bindButton } from '../../shared/mobile.js';
 const MOB = initMobile({"landscape":true});
 
 const W = 960, H = 540, TS = 60, COLS = 16, ROWS = 9;
@@ -39,24 +39,16 @@ const S = {
 
 /* ------------------------------ input ------------------------------ */
 const key = {};
-let anyPress = false, touchMode = false;
+let anyPress = false, touchMode = MOB.touch;   // a phone is a phone before it is ever touched
 addEventListener('keydown', (e) => {
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
   if (!e.repeat) { key[e.code] = true; anyPress = true; }
 });
 addEventListener('keyup', (e) => { key[e.code] = false; });
-const joyV = { x: 0, y: 0 };
-const joy = document.getElementById('joy');
-joy.addEventListener('touchmove', (e) => {
-  e.preventDefault();
-  const r = joy.getBoundingClientRect();
-  const t = e.touches[0];
-  joyV.x = Math.max(-1, Math.min(1, (t.clientX - r.left - 65) / 45));
-  joyV.y = Math.max(-1, Math.min(1, (t.clientY - r.top - 65) / 45));
-}, { passive: false });
-joy.addEventListener('touchend', () => { joyV.x = 0; joyV.y = 0; });
-document.getElementById('tAtk').addEventListener('touchstart', (e) => { e.preventDefault(); key.KeyJ = true; anyPress = true; }, { passive: false });
-document.getElementById('tAtk').addEventListener('touchend', () => { key.KeyJ = false; });
+const joyV = bindStick(document.getElementById('joy'), document.getElementById('joyKnob'));
+bindButton(document.getElementById('tAtk'),
+  () => { key.KeyJ = true; anyPress = true; },
+  () => { key.KeyJ = false; });
 addEventListener('touchstart', () => {
   if (!touchMode) { touchMode = true; document.body.classList.add('touch'); }
   anyPress = true;
@@ -449,7 +441,10 @@ function sceneTitle() {
   brush('冒 険', W / 2, 280, 22, '#e8d9c8');
   brush('ten cursed lands · four doors out of each · every 30 seconds the paths re-knot', W / 2, 335, 15, '#9a8a7a');
   brush('find THE DUNGEON and step into the pit — that is the only escape', W / 2, 362, 15, '#9a8a7a');
-  brush('WASD or ARROWS move · SPACE or J slash', W / 2, 395, 14, '#9a8a7a');
+  brush(touchMode
+    ? 'DRAG THE STICK to move · SLASH to cut'
+    : 'WASD or ARROWS move · SPACE or J slash',
+    W / 2, 395, 14, '#9a8a7a');
   brush(touchMode ? 'GUIDE button (top left)' : 'T — how to survive', W / 2, 422, 13, '#ff8a5a');
   if (Math.sin(G_.t * 4) > -0.2) brush(touchMode ? 'TAP TO WANDER' : 'PRESS ANY KEY', W / 2, 470, 20, '#e8d9c8');
   if (key.KeyT) { key.KeyT = false; G_.scene = 'guide'; G_.t = 0; return; }
@@ -470,7 +465,9 @@ function sceneGuide() {
     ['THE SHIFT', 'every 30 seconds every door re-knots itself - where it leads changes'],
     ['THE MAW SLEEPS', 'for the first 7 shifts there is no way out - survive and learn the lands'],
     ['THEN IT WAKES', 'the dungeon manifests in one land - and MOVES with every shift. hunt it. step in. game over.'],
-    ['SHADOW SOLDIERS', 'two cuts each (SPACE or J) - or just run. hearts drop sometimes.'],
+    ['SHADOW SOLDIERS', touchMode
+      ? 'two cuts each (SLASH) - or just run. hearts drop sometimes.'
+      : 'two cuts each (SPACE or J) - or just run. hearts drop sometimes.'],
     ['THE LAND FIGHTS YOU', 'trees, rocks, walls, water and graves block your way'],
     ['WISDOM', 'when the shift timer runs low, stand at a door - jump through the moment it re-knots'],
   ];
