@@ -2,12 +2,18 @@
 // 10 tile areas · 4 exits each · paths re-knot every 30 seconds ·
 // find THE MAW. NES-Zelda look: flat-shaded pixel tiles, flip-screen rooms.
 import { loadImage } from '../../shared/sprites.js';
-import { initMobile, bindStick, bindButton } from '../../shared/mobile.js';
+import { initMobile, bindStick, bindButton, fitCanvas } from '../../shared/mobile.js';
 const MOB = initMobile({"landscape":true});
 
 const W = 960, H = 540, TS = 60, COLS = 16, ROWS = 9;
 const SHIFT_SECONDS = 30;
 const cv = document.getElementById('game');
+// The room is a fixed 16x9 grid and must stay that way — widening it would
+// move the doors. Instead the CANVAS grows to the phone's shape and the room
+// is centred in it, with the chamber's own stone carried out to both edges.
+// On desktop fitCanvas is a no-op, OFFX is 0, and nothing below changes.
+fitCanvas(cv, { designH: H, minW: W, maxW: 1400 });
+const OFFX = Math.round((cv.width - W) / 2);
 const g = cv.getContext('2d');
 g.imageSmoothingEnabled = false;
 
@@ -344,6 +350,22 @@ function brush(txt, x, y, size, col, align = 'center', alpha = 1) {
   g.fillStyle = col; g.fillText(txt, x, y);
   g.restore();
 }
+// Fill the space either side of the room with the current land's wall tile,
+// sunk in shadow so the lit room still reads as the place you are standing.
+function drawMargins() {
+  const set = tilesets[AREAS[G_.area].biome];
+  const wall = set && set.s;
+  if (!wall) return;
+  const right = cv.width - (OFFX + W);
+  for (const band of [[0, OFFX], [OFFX + W, right]]) {
+    for (let x = band[0]; x < band[0] + band[1]; x += TS) {
+      for (let y = 0; y < H; y += TS) g.drawImage(wall, x, y, TS, TS);
+    }
+  }
+  g.fillStyle = 'rgba(4,2,3,.58)';
+  g.fillRect(0, 0, OFFX, H);
+  g.fillRect(OFFX + W, 0, right, H);
+}
 function drawTiles() {
   const set = tilesets[AREAS[G_.area].biome];
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
@@ -518,6 +540,12 @@ function loop(ts) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (ts - last) / 1000); last = ts;
   G_.t += dt;
+  if (OFFX > 0) {
+    g.fillStyle = '#070405'; g.fillRect(0, 0, cv.width, H);
+    if (G_.scene === 'play') drawMargins();
+  }
+  g.save();
+  g.translate(OFFX, 0);
   switch (G_.scene) {
     case 'boot':
       g.fillStyle = '#070405'; g.fillRect(0, 0, W, H);
@@ -529,6 +557,7 @@ function loop(ts) {
     case 'dead': sceneDead(); break;
     case 'win': sceneWin(); break;
   }
+  g.restore();
   anyPress = false;
 }
 buildTiles();
